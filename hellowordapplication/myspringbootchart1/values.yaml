@@ -1,0 +1,65 @@
+replicaCount: 1
+
+image:
+  repository: pramila188/hellowordapplication
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 8070
+
+autoscaling:
+  enabled: false
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+podAnnotations: {}
+
+podLabels: {}
+
+imagePullSecrets: []
+
+serviceAccount:
+  create: true
+  name: ""
+
+podSecurityContext: {}
+
+securityContext: {}
+
+#livenessProbe:
+#  httpGet:
+#    path: /actuator/health/liveness
+#    port: 8070
+#  initialDelaySeconds: 3
+#  periodSeconds: 3
+
+# readinessProbe:
+#  httpGet:
+#    path: /actuator/health/readiness
+#    port: 8070
+#  initialDelaySeconds: 3
+#  periodSeconds: 3
+
+volumeMounts: []
+
+ingress:
+  enabled: true
+  annotations: {}
+  hosts:
+    - host: "chart-example.local"
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+
+
+
