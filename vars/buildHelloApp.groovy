@@ -14,7 +14,7 @@ def call(Map config = [:]) {
                 steps {
                     echo "Checking out code for ${APP_NAME}..."
                     // Checkout from the repository (this can be customized)
-                    git url: 'https://github.com/pramilasawant/helloword1.git, branch: 'main'
+                    git url: 'https://github.com/pramilasawant/helloword1.git', branch: 'main'
                 }
             }
 
