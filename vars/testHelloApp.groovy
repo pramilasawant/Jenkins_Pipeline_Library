@@ -5,7 +5,7 @@ def call(Map config = [:]) {
         agent any
 
         environment {
-            APP_NAME = config.appName ?: 'helloworld'
+            APP_NAME = config.appName ?: 'helloworldapplication'
         }
 
         stages {
