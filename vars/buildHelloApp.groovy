@@ -1,4 +1,4 @@
-// vars/buildHelloApp.groovy
+  // vars/buildHelloApp.groovy
 
 def call(Map config = [:]) {
     pipeline {
@@ -6,7 +6,7 @@ def call(Map config = [:]) {
          environment {
            APP_NAME = "${config.appName ?: 'helloworldapplication'}"
            VERSION = "${config.version ?: '1.0.0'}"
-}
+                 }
 
 
         stages {
