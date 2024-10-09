@@ -8,7 +8,7 @@ def call() {
         }
 
         parameters {
-            string(name: 'JAVA_REPO', defaultValue: 'https://github.com/pramilasawant/testhello.git', description: 'Java Application Repository')
+            string(name: 'JAVA_REPO', defaultValue: 'https://github.com/pramilasawant/helloword1.git', description: 'Java Application Repository')
             string(name: 'DOCKERHUB_USERNAME', defaultValue: 'pramila188', description: 'DockerHub Username')
             string(name: 'JAVA_IMAGE_NAME', defaultValue: 'testhello', description: 'Java Docker Image Name')
             string(name: 'JAVA_NAMESPACE', defaultValue: 'test', description: 'Kubernetes Namespace for Java Application')
@@ -70,7 +70,7 @@ def call() {
                 steps {
                     script {
                         kubernetesDeploy(
-                            configs: 'deploymentservice.yaml',
+                            configs: 'deploymentService.yaml',
                             kubeconfigId: 'kubeconfig1pwd'
                         )
                     }
