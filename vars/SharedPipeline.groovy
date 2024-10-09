@@ -70,7 +70,7 @@ def call() {
                 steps {
                     script {
                         kubernetesDeploy(
-                            configs: 'deploymentservice.yaml',
+                            configs: 'Build and Deploy Java and Python Applications',
                             kubeconfigId: 'kubeconfig1pwd'
                         )
                     }
