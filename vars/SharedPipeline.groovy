@@ -9,56 +9,26 @@ def call() {
 
         parameters {
             string(name: 'JAVA_REPO', defaultValue: 'https://github.com/pramilasawant/testhello.git', description: 'Java Application Repository')
-            string(name: 'PYTHON_REPO', defaultValue: 'https://github.com/pramilasawant/phython-application.git', description: 'Python Application Repository')
             string(name: 'DOCKERHUB_USERNAME', defaultValue: 'pramila188', description: 'DockerHub Username')
             string(name: 'JAVA_IMAGE_NAME', defaultValue: 'testhello', description: 'Java Docker Image Name')
-            string(name: 'PYTHON_IMAGE_NAME', defaultValue: 'python-app', description: 'Python Docker Image Name')
             string(name: 'JAVA_NAMESPACE', defaultValue: 'test', description: 'Kubernetes Namespace for Java Application')
-            string(name: 'PYTHON_NAMESPACE', defaultValue: 'python', description: 'Kubernetes Namespace for Python Application')
         }
 
         stages {
-            stage('Clone Repositories') {
-                parallel {
-                    stage('Clone Java Repo') {
-                        steps {
-                            git url: params.JAVA_REPO, branch: 'main'
-                        }
-                    }
-                    stage('Clone Python Repo') {
-                        steps {
-                            dir('python-app') {
-                                git url: params.PYTHON_REPO, branch: 'main'
-                            }
-                        }
-                    }
+            stage('Clone Repository') {
+                steps {
+                    git url: params.JAVA_REPO, branch: 'main'
                 }
             }
 
-            stage('Build and Push Docker Images') {
-                parallel {
-                    stage('Build and Push Java Image') {
-                        steps {
-                            dir('testhello') {
-                                sh 'mvn clean install'
-                                script {
-                                    def image = docker.build("${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}")
-                                    docker.withRegistry('', 'dockerhubpwd') {
-                                        image.push()
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    stage('Build and Push Python Image') {
-                        steps {
-                            dir('python-app') {
-                                script {
-                                    def image = docker.build("${params.DOCKERHUB_USERNAME}/${params.PYTHON_IMAGE_NAME}:${currentBuild.number}")
-                                    docker.withRegistry('', 'dockerhubpwd') {
-                                        image.push()
-                                    }
-                                }
+            stage('Build and Push Docker Image') {
+                steps {
+                    dir('testhello') {
+                        sh 'mvn clean install'
+                        script {
+                            def image = docker.build("${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}")
+                            docker.withRegistry('', 'dockerhubpwd') {
+                                image.push()
                             }
                         }
                     }
@@ -96,35 +66,11 @@ def call() {
                 }
             }
 
-            stage('Build and Package Python Helm Chart') {
-                steps {
-                    dir('python-app') {
-                        sh '''
-                            "${WORKSPACE}/yq" e -i '.image.tag = "latest"' ./my-python-app/values.yaml
-                            helm template ./my-python-app
-                            helm lint ./my-python-app
-                            helm package ./my-python-app --version "1.0.0"
-                        '''
-                    }
-                }
-            }
-
             stage('Deploy Java Application to Kubernetes') {
                 steps {
                     script {
                         kubernetesDeploy(
-                            configs: 'Build and Deploy Java and Python Applications',
-                            kubeconfigId: 'kubeconfig1pwd'
-                        )
-                    }
-                }
-            }
-
-            stage('Deploy Python Application to Kubernetes') {
-                steps {
-                    script {
-                        kubernetesDeploy(
-                            configs: 'Build and Deploy Java and Python Applications',
+                            configs: 'Build and Deploy Java Application',
                             kubeconfigId: 'kubeconfig1pwd'
                         )
                     }
@@ -150,7 +96,7 @@ def call() {
                         botUser: true,
                         tokenCredentialId: 'b3ee302b-e782-4d8e-ba83-7fa591d43205',
                         notifyCommitters: false,
-                        message: "Build Final_project #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
+                        message: "Build Java Application #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
                     )
                 }
             }
