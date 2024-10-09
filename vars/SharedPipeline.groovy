@@ -71,7 +71,7 @@ def call() {
                     script {
                         kubernetesDeploy(
                             configs: 'deploymentservice.yaml',
-                            kubeconfigId: 'kubeconfig1pwd'
+                            kubeconfigId: 'k8sconfigpwd'
                         )
                     }
                 }
