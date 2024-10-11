@@ -39,6 +39,7 @@ def call() {
 
             stage('SonarQube Analysis') {
                 steps {
+                    dir('testhello') {
                     withSonarQubeEnv('SonarQube') { // 'SonarQube' is the name defined in Jenkins global configuration
                         sh '''
                             mvn sonar:sonar \
@@ -49,6 +50,7 @@ def call() {
                     }
                 }
             }
+            }     
 
             stage('Get Approval') {
                 steps {
