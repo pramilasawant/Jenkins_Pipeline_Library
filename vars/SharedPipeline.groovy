@@ -40,17 +40,17 @@ def call() {
             stage('SonarQube Analysis') {
                 steps {
                     dir('testhello') {
-                    withSonarQubeEnv('SonarQube') { // 'SonarQube' is the name defined in Jenkins global configuration
-                        sh '''
-                            mvn sonar:sonar \
-                                -Dsonar.projectKey=testhello \
-                                -Dsonar.host.url=${SONARQUBE_SERVER} \
-                                -Dsonar.login=${SONARQUBE_CREDENTIALS}
-                        '''
+                        withSonarQubeEnv('SonarQube') { // 'SonarQube' is the name defined in Jenkins global configuration
+                            sh '''
+                                mvn sonar:sonar \
+                                    -Dsonar.projectKey=testhello \
+                                    -Dsonar.host.url=${SONARQUBE_SERVER} \
+                                    -Dsonar.login=${SONARQUBE_CREDENTIALS}
+                            '''
+                        }
                     }
                 }
             }
-            }     
 
             stage('Get Approval') {
                 steps {
@@ -105,17 +105,47 @@ def call() {
 
                     echo "Sending Slack notification to ${slackChannel} with message: ${slackMessage}"
 
+                    // Send Slack notification
                     slackSend(
                         baseUrl: 'https://yourteam.slack.com/api/',
                         teamDomain: 'StarAppleInfotech',
                         channel: '#builds',
                         color: slackColor,
                         botUser: true,
-                        tokenCredentialId: 'b3ee302b-e782-4d8e-ba83-7fa591d43205',
+                        tokenCredentialId: SLACK_CREDENTIALS,
                         notifyCommitters: false,
                         message: "Build Java Application #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
                     )
                 }
+
+                // Send email notification
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+
+            failure {
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Failed",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed.</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+
+            success {
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Succeeded",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} succeeded.</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
             }
         }
     }
