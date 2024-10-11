@@ -5,6 +5,8 @@ def call() {
         environment {
             DOCKERHUB_CREDENTIALS = credentials('dockerhubpwd')
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
+            SONARQUBE_CREDENTIALS = credentials('sonar_token') // SonarQube token credentials
+            SONARQUBE_SERVER = 'http://your-sonarqube-server'  // Replace with your SonarQube server URL
         }
 
         parameters {
@@ -31,6 +33,19 @@ def call() {
                                 image.push()
                             }
                         }
+                    }
+                }
+            }
+
+            stage('SonarQube Analysis') {
+                steps {
+                    withSonarQubeEnv('SonarQube') { // 'SonarQube' is the name defined in Jenkins global configuration
+                        sh '''
+                            mvn sonar:sonar \
+                                -Dsonar.projectKey=testhello \
+                                -Dsonar.host.url=${SONARQUBE_SERVER} \
+                                -Dsonar.login=${SONARQUBE_CREDENTIALS}
+                        '''
                     }
                 }
             }
