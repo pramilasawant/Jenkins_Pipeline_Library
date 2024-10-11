@@ -6,7 +6,7 @@ def call() {
             DOCKERHUB_CREDENTIALS = credentials('dockerhubpwd')
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
             SONARQUBE_CREDENTIALS = credentials('sonar_token') // SonarQube token credentials
-            SONARQUBE_SERVER = 'http://your-sonarqube-server'  // Replace with your SonarQube server URL
+            SONARQUBE_SERVER = 'http://localhost:9000'   // Replace with your SonarQube server URL
         }
 
         parameters {
