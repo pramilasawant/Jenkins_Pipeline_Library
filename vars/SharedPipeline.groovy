@@ -5,7 +5,7 @@ def call() {
         environment {
             DOCKERHUB_CREDENTIALS = credentials('dockerhubpwd')
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
-            SONARQUBE_CREDENTIALS = credentials('Jenkins pipeline liberary sonar token') // SonarQube token credentials
+            SONARQUBE_CREDENTIALS = credentials('pipeline_stoken') // SonarQube token credentials
             SONARQUBE_SERVER = 'http://localhost:9000'   // Replace with your SonarQube server URL
         }
 
