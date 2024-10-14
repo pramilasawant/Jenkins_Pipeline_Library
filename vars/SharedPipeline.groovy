@@ -37,6 +37,18 @@ def call() {
                 }
             }
 
+            stage('Anchore Scan') {
+                steps {
+                    script {
+                        // Anchore image scan
+                        anchore name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}", 
+                                tag: "${currentBuild.number}", 
+                                engineCredentialsId: 'anchore-credentials', // Use the ID of your Anchore credentials in Jenkins
+                                bailOnFail: true // This will fail the build if vulnerabilities are found
+                    }
+                }
+            }
+
             stage('SonarQube Analysis') {
                 steps {
                     dir('testhello') {
@@ -109,7 +121,7 @@ def call() {
                     slackSend(
                         baseUrl: 'https://yourteam.slack.com/api/',
                         teamDomain: 'StarAppleInfotech',
-                        channel: '#builds',
+                        channel: slackChannel,
                         color: slackColor,
                         botUser: true,
                         tokenCredentialId: SLACK_CREDENTIALS,
