@@ -7,6 +7,9 @@ def call() {
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
             SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken') // SonarQube token credentials
             SONARQUBE_SERVER = 'http://localhost:9000'   // Replace with your SonarQube server URL
+            ANCHORE_URL = 'http://192.168.1.6:8228' // Replace with your Anchore Engine URL
+            ANCHORE_USERNAME = 'admin' // Anchore username
+            ANCHORE_PASSWORD = 'foobar' // Anchore password
         }
 
         parameters {
@@ -79,6 +82,24 @@ def call() {
                             helm lint ./myspringbootchart
                             helm package ./myspringbootchart --version "1.0.0"
                         '''
+                    }
+                }
+            }
+
+            stage('Scan Image with Anchore') {
+                steps {
+                    script {
+                        // Create a new image in Anchore
+                        sh """
+                            curl -X POST -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' -H 'Content-Type: application/json' -d '{"tag": "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"}' ${ANCHORE_URL}/v1/images
+                        """
+                        
+                        // Wait for the image to be processed
+                        sleep(time: 30, unit: 'SECONDS')
+
+                        // Get the image scan results
+                        def results = sh(script: "curl -s -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' ${ANCHORE_URL}/v1/images/${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}/report", returnStdout: true)
+                        echo "Scan Results: ${results}"
                     }
                 }
             }
