@@ -85,6 +85,22 @@ def call() {
                 }
             }
 
+            stage('Prepare Anchore Image List') {
+                steps {
+                    script {
+                        writeFile file: 'anchore_images.txt', text: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
+                    }
+                    echo "Anchore image list file created."
+                }
+            }
+
+            stage('Check File in Workspace') {
+                steps {
+                    sh 'ls -l'
+                    sh 'cat anchore_images.txt'
+                }
+            }
+
             stage('Scan Image with Anchore') {
                 steps {
                     script {
