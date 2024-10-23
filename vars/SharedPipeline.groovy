@@ -101,13 +101,13 @@ def call() {
                 }
             }
 
-            // Added Scan Image with Anchore stage here
+            // Scan Image with Anchore stage
             stage('Scan Image with Anchore') {
                 steps {
                     script {
                         // Convert engineRetries and engineRetryInterval to strings
-                        def engineRetries = "300"  // Convert to String
-                        def engineRetryInterval = "5"  // Convert to String
+                        def engineRetries = "600"  // Increased retries
+                        def engineRetryInterval = "10"  // Increased interval
 
                         anchore(
                             name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
