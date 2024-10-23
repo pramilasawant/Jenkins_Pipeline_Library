@@ -104,12 +104,13 @@ def call() {
             stage('Scan Image with Anchore') {
                 steps {
                     script {
-                        anchore name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
-                                engineCredentialsId: 'anchore-credentials', 
-                                policyBundleId: '', 
-                                severity: 'high', 
-                                includePackages: false, 
-                                bailOnFail: true
+                        anchore(
+                            name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
+                            engineCredentialsId: 'anchore-credentials', 
+                            engineRetries: 300, 
+                            engineRetryInterval: 5, 
+                            bailOnFail: true
+                        )
                     }
                 }
             }
