@@ -107,7 +107,7 @@ def call() {
                         anchore(
                             name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
                             engineCredentialsId: 'anchore-credentials', 
-                            engineRetries: 300, 
+                            engineRetries: "300", 
                             engineRetryInterval: 5, 
                             bailOnFail: true
                         )
