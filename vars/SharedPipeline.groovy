@@ -101,21 +101,21 @@ def call() {
                 }
             }
 
+            // Added Scan Image with Anchore stage here
             stage('Scan Image with Anchore') {
                 steps {
                     script {
-                        try {
-                            anchore(
-                                name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
-                                engineCredentialsId: 'anchore-credentials', 
-                                engineRetries: "300", 
-                                engineRetryInterval: 5, 
-                                bailOnFail: true
-                            )
-                        } catch (Exception e) {
-                            echo "Error during Anchore scan: ${e.message}"
-                            currentBuild.result = 'FAILURE'
-                        }
+                        // Convert engineRetries and engineRetryInterval to strings
+                        def engineRetries = "300"  // Convert to String
+                        def engineRetryInterval = "5"  // Convert to String
+
+                        anchore(
+                            name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
+                            engineCredentialsId: 'anchore-credentials', 
+                            engineRetries: engineRetries, 
+                            engineRetryInterval: engineRetryInterval, 
+                            bailOnFail: true
+                        )
                     }
                 }
             }
