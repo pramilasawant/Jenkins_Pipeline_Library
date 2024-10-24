@@ -101,14 +101,12 @@ def call() {
                 }
             }
 
-            // Scan Image with Anchore stage
             stage('Scan Image with Anchore') {
                 steps {
-                    anchore plugin {
-                    imageListFile: 'anchore_images.txt',
-                    bailOnFail: true
-                        )
-                    }
+                    anchore plugin (
+                        imageListFile: 'anchore_images.txt',
+                        bailOnFail: true
+                    )
                 }
             }
 
@@ -134,7 +132,6 @@ def call() {
 
                     echo "Sending Slack notification to ${slackChannel} with message: ${slackMessage}"
 
-                    // Send Slack notification
                     slackSend(
                         baseUrl: 'https://yourteam.slack.com/api/',
                         teamDomain: 'StarAppleInfotech',
@@ -147,7 +144,6 @@ def call() {
                     )
                 }
 
-                // Send email notification
                 emailext(
                     to: 'pramila.narawadesv@gmail.com',
                     subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
