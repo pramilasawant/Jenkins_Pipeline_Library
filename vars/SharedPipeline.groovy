@@ -101,12 +101,22 @@ def call() {
                 }
             }
 
+            // Scan Image with Anchore stage
             stage('Scan Image with Anchore') {
                 steps {
-                    anchore plugin (
-                        imageListFile: 'anchore_images.txt',
-                        bailOnFail: true
-                    )
+                    script {
+                        // Convert engineRetries and engineRetryInterval to strings
+                        def engineRetries = "600"  // Increased retries
+                        def engineRetryInterval = "10"  // Increased interval
+
+                        anchore(
+                            name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
+                            engineCredentialsId: 'anchore-credentials', 
+                            engineRetries: engineRetries, 
+                            engineRetryInterval: engineRetryInterval, 
+                            bailOnFail: true
+                        )
+                    }
                 }
             }
 
@@ -132,6 +142,7 @@ def call() {
 
                     echo "Sending Slack notification to ${slackChannel} with message: ${slackMessage}"
 
+                    // Send Slack notification
                     slackSend(
                         baseUrl: 'https://yourteam.slack.com/api/',
                         teamDomain: 'StarAppleInfotech',
@@ -144,6 +155,7 @@ def call() {
                     )
                 }
 
+                // Send email notification
                 emailext(
                     to: 'pramila.narawadesv@gmail.com',
                     subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
