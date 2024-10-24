@@ -114,10 +114,10 @@ def call() {
                            // engineRetries: engineRetries, 
                           //  engineRetryInterval: engineRetryInterval, 
                            // bailOnFail: true
-                        )
-                    }
-                }
-            }
+                 //       )
+                 //   }
+              //  }
+           // }
 
             // Optional - New Anchore Scan Stage with Your Inputs
             stage('Anchore Image Scan') {
