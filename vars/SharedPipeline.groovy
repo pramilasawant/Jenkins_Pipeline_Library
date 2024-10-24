@@ -104,17 +104,9 @@ def call() {
             // Scan Image with Anchore stage
             stage('Scan Image with Anchore') {
                 steps {
-                    script {
-                        // Convert engineRetries and engineRetryInterval to strings
-                        def engineRetries = "600"  // Increased retries
-                        def engineRetryInterval = "10"  // Increased interval
-
-                        anchore(
-                            name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
-                            engineCredentialsId: 'anchore-credentials', 
-                            engineRetries: engineRetries, 
-                            engineRetryInterval: engineRetryInterval, 
-                            bailOnFail: true
+                    anchore plugin {
+                    imageListFile: 'anchore_images.txt',
+                    bailOnFail: true
                         )
                     }
                 }
