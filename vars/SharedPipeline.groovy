@@ -5,10 +5,10 @@ def call() {
         environment {
             DOCKERHUB_CREDENTIALS = credentials('dockerhubpwd')
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
-            SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken') // SonarQube token credentials
-            SONARQUBE_SERVER = 'http://localhost:9000'   // Replace with your SonarQube server URL
-            ANCHORE_CREDENTIALS = credentials('anchore-credentials') // Anchore credentials
-            ANCHORE_URL = 'http://192.168.1.6:8228' // Anchore Engine URL
+            SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken')
+            SONARQUBE_SERVER = 'http://localhost:9000'
+            ANCHORE_CREDENTIALS = credentials('anchore-credentials')
+            ANCHORE_URL = 'http://192.168.1.6:8228'
         }
 
         parameters {
@@ -42,7 +42,7 @@ def call() {
             stage('SonarQube Analysis') {
                 steps {
                     dir('testhello') {
-                        withSonarQubeEnv('SonarQube') { // 'SonarQube' is the name defined in Jenkins global configuration
+                        withSonarQubeEnv('SonarQube') {
                             sh '''
                                 mvn sonar:sonar \
                                     -Dsonar.projectKey=testhello \
@@ -101,19 +101,31 @@ def call() {
                 }
             }
 
-            // Scan Image with Anchore stage
-            stage('Scan Image with Anchore') {
+            // Scan Image with Anchore - First implementation
+           // stage('Scan Image with Anchore') {
+             //   steps {
+               //     script {
+                 //       def engineRetries = "600"
+                   //     def engineRetryInterval = "10"
+                        
+                     //   anchore(
+                       //     name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
+                         //   engineCredentialsId: 'anchore-credentials', 
+                           // engineRetries: engineRetries, 
+                          //  engineRetryInterval: engineRetryInterval, 
+                           // bailOnFail: true
+                        )
+                    }
+                }
+            }
+
+            // Optional - New Anchore Scan Stage with Your Inputs
+            stage('Anchore Image Scan') {
                 steps {
                     script {
-                        // Convert engineRetries and engineRetryInterval to strings
-                        def engineRetries = "600"  // Increased retries
-                        def engineRetryInterval = "10"  // Increased interval
-
                         anchore(
                             name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
                             engineCredentialsId: 'anchore-credentials', 
-                            engineRetries: engineRetries, 
-                            engineRetryInterval: engineRetryInterval, 
                             bailOnFail: true
                         )
                     }
