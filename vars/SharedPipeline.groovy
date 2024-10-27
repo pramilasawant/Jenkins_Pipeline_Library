@@ -86,27 +86,6 @@ def call() {
                 }
             }
 
-            stage('Scan Image with Anchore') {
-                steps {
-                    script {
-                        // Trigger image scan in Anchore
-                        sh """
-                            curl -X POST -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' -H 'Content-Type: application/json' -d '{"tag": "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"}' ${ANCHORE_URL}/v1/images
-                        """
-                        
-                        // Wait for Anchore to analyze the image
-                        sleep(time: 60, unit: 'SECONDS')
-
-                        // Fetch scan report using the correct API endpoint
-                        def results = sh(
-                            script: "curl -s -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' ${ANCHORE_URL}/v1/images/${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}/vuln/all",
-                            returnStdout: true
-                        ).trim()
-                        echo "Scan Results: ${results}"
-                    }
-                }
-            }
-
             stage('Deploy Java Application to Kubernetes') {
                 steps {
                     script {
@@ -182,31 +161,4 @@ def call() {
                 emailext(
                     to: 'pramila.narawadesv@gmail.com',
                     subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
-                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}</p>
-                            <p>Check console output at ${env.BUILD_URL}</p>""",
-                    mimeType: 'text/html'
-                )
-            }
-
-            failure {
-                emailext(
-                    to: 'pramila.narawadesv@gmail.com',
-                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Failed",
-                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed.</p>
-                            <p>Check console output at ${env.BUILD_URL}</p>""",
-                    mimeType: 'text/html'
-                )
-            }
-
-            success {
-                emailext(
-                    to: 'pramila.narawadesv@gmail.com',
-                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Succeeded",
-                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} succeeded.</p>
-                            <p>Check console output at ${env.BUILD_URL}</p>""",
-                    mimeType: 'text/html'
-                )
-            }
-        }
-    }
-}
+                  
