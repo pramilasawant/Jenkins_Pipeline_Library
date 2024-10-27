@@ -55,6 +55,12 @@ def call() {
                 }
             }
 
+            stage('Anchore Scan') {
+                steps {
+                    anchore name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", engineCredentialsId: 'anchore-credentials-id', policyId: ''
+                }
+            }
+
             stage('Get Approval') {
                 steps {
                     script {
