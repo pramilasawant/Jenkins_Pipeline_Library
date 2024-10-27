@@ -161,4 +161,31 @@ def call() {
                 emailext(
                     to: 'pramila.narawadesv@gmail.com',
                     subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
-                  
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+
+            failure {
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Failed",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed.</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+
+            success {
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Succeeded",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} succeeded.</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+        }
+    }
+}
