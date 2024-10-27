@@ -1,14 +1,14 @@
-def call() {
     pipeline {
         agent any
 
         environment {
             DOCKERHUB_CREDENTIALS = credentials('dockerhubpwd')
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
-            SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken')
-            SONARQUBE_SERVER = 'http://localhost:9000'
-            ANCHORE_CREDENTIALS = credentials('anchore-credentials')
-            ANCHORE_URL = 'http://192.168.1.6:8228'
+            SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken') // SonarQube token credentials
+            SONARQUBE_SERVER = 'http://localhost:9000'   // Replace with your SonarQube server URL
+            ANCHORE_URL = 'http://192.168.1.6:8228' // Replace with your Anchore Engine URL
+            ANCHORE_USERNAME = 'admin' // Anchore username
+            ANCHORE_PASSWORD = 'foobar' // Anchore password
         }
 
         parameters {
@@ -42,7 +42,7 @@ def call() {
             stage('SonarQube Analysis') {
                 steps {
                     dir('testhello') {
-                        withSonarQubeEnv('SonarQube') {
+                        withSonarQubeEnv('SonarQube') { // 'SonarQube' is the name defined in Jenkins global configuration
                             sh '''
                                 mvn sonar:sonar \
                                     -Dsonar.projectKey=testhello \
@@ -85,49 +85,20 @@ def call() {
                 }
             }
 
-            stage('Prepare Anchore Image List') {
+            stage('Scan Image with Anchore') {
                 steps {
                     script {
-                        writeFile file: 'anchore_images.txt', text: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
-                    }
-                    echo "Anchore image list file created."
-                }
-            }
-
-            stage('Check File in Workspace') {
-                steps {
-                    sh 'ls -l'
-                    sh 'cat anchore_images.txt'
-                }
-            }
-
-            // Scan Image with Anchore - First implementation
-           // stage('Scan Image with Anchore') {
-             //   steps {
-               //     script {
-                 //       def engineRetries = "600"
-                   //     def engineRetryInterval = "10"
+                        // Create a new image in Anchore
+                        sh """
+                            curl -X POST -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' -H 'Content-Type: application/json' -d '{"tag": "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"}' ${ANCHORE_URL}/v1/images
+                        """
                         
-                     //   anchore(
-                       //     name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
-                         //   engineCredentialsId: 'anchore-credentials', 
-                           // engineRetries: engineRetries, 
-                          //  engineRetryInterval: engineRetryInterval, 
-                           // bailOnFail: true
-                 //       )
-                 //   }
-              //  }
-           // }
+                        // Wait for the image to be processed
+                        sleep(time: 30, unit: 'SECONDS')
 
-            // Optional - New Anchore Scan Stage with Your Inputs
-            stage('Anchore Image Scan') {
-                steps {
-                    script {
-                        anchore(
-                            name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
-                            engineCredentialsId: 'anchore-credentials', 
-                            bailOnFail: true
-                        )
+                        // Get the image scan results
+                        def results = sh(script: "curl -s -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' ${ANCHORE_URL}/v1/images/${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}/report", returnStdout: true)
+                        echo "Scan Results: ${results}"
                     }
                 }
             }
