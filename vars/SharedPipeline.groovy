@@ -57,7 +57,7 @@ def call() {
 
             stage('Anchore Scan') {
                 steps {
-                    anchore name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", engineCredentialsId: 'anchore-credentials-id', policyId: ''
+                    anchore name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", engineCredentialsId: 'anchor_id', policyId: ''
                 }
             }
 
