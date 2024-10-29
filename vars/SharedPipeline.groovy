@@ -5,10 +5,11 @@ def call() {
         environment {
             DOCKERHUB_CREDENTIALS = credentials('dockerhubpwd')
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
-            SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken')
-            SONARQUBE_SERVER = 'http://localhost:9000'
-            ANCHORE_ENGINE_CREDENTIALS = credentials('anchor_id')
-            ANCHORE_URL = 'http://192.168.1.6:8228'
+            SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken') // SonarQube token credentials
+            SONARQUBE_SERVER = 'http://localhost:9000'   // Replace with your SonarQube server URL
+            ANCHORE_URL = 'http://192.168.1.6:8228' // Replace with your Anchore Engine URL
+            ANCHORE_USERNAME = 'admin' // Anchore username
+            ANCHORE_PASSWORD = 'foobar' // Anchore password
         }
 
         parameters {
@@ -31,7 +32,7 @@ def call() {
                         sh 'mvn clean install'
                         script {
                             def image = docker.build("${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}")
-                            docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
+                            docker.withRegistry('', 'dockerhubpwd') {
                                 image.push()
                             }
                         }
@@ -42,7 +43,7 @@ def call() {
             stage('SonarQube Analysis') {
                 steps {
                     dir('testhello') {
-                        withSonarQubeEnv('SonarQube') {
+                        withSonarQubeEnv('SonarQube') { // 'SonarQube' is the name defined in Jenkins global configuration
                             sh '''
                                 mvn sonar:sonar \
                                     -Dsonar.projectKey=testhello \
@@ -88,11 +89,17 @@ def call() {
             stage('Scan Image with Anchore') {
                 steps {
                     script {
-                        withCredentials([usernamePassword(credentialsId: 'anchor_id', passwordVariable: 'ANCHORE_PASSWORD', usernameVariable: 'ANCHORE_USERNAME')]) {
-                            sh """
-                                curl -u ${ANCHORE_USERNAME}:${ANCHORE_PASSWORD} -X POST "${ANCHORE_URL}/v1/images?tag=${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
-                            """
-                        }
+                        // Create a new image in Anchore
+                        sh """
+                            curl -X POST -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' -H 'Content-Type: application/json' -d '{"tag": "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"}' ${ANCHORE_URL}/v1/images
+                        """
+                        
+                        // Wait for the image to be processed
+                        sleep(time: 30, unit: 'SECONDS')
+
+                        // Get the image scan results
+                        def results = sh(script: "curl -s -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' ${ANCHORE_URL}/v1/images/${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}/report", returnStdout: true)
+                        echo "Scan Results: ${results}"
                     }
                 }
             }
@@ -112,20 +119,27 @@ def call() {
         post {
             always {
                 script {
+                    def slackBaseUrl = 'https://slack.com/api/'
+                    def slackChannel = '#builds'
                     def slackColor = currentBuild.currentResult == 'SUCCESS' ? 'good' : 'danger'
                     def slackMessage = "Build ${currentBuild.fullDisplayName} finished with status: ${currentBuild.currentResult}"
 
-                    echo "Sending Slack notification with message: ${slackMessage}"
+                    echo "Sending Slack notification to ${slackChannel} with message: ${slackMessage}"
 
+                    // Send Slack notification
                     slackSend(
-                        baseUrl: 'https://slack.com/api/',
+                        baseUrl: 'https://yourteam.slack.com/api/',
+                        teamDomain: 'StarAppleInfotech',
                         channel: '#builds',
                         color: slackColor,
+                        botUser: true,
                         tokenCredentialId: SLACK_CREDENTIALS,
+                        notifyCommitters: false,
                         message: "Build Java Application #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
                     )
                 }
 
+                // Send email notification
                 emailext(
                     to: 'pramila.narawadesv@gmail.com',
                     subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
