@@ -7,6 +7,7 @@ def call() {
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
             SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken')
             SONARQUBE_SERVER = 'http://localhost:9000'
+            ANCHORE_ENGINE_CREDENTIALS = credentials('anchor_id')
             ANCHORE_URL = 'http://192.168.1.6:8228'
             ANCHORE_USERNAME = 'admin'
             ANCHORE_PASSWORD = 'foobar'
