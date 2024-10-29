@@ -1,3 +1,4 @@
+You said:
 def call() {
     pipeline {
         agent any
@@ -9,6 +10,8 @@ def call() {
             SONARQUBE_SERVER = 'http://localhost:9000'
             ANCHORE_ENGINE_CREDENTIALS = credentials('anchor_id')
             ANCHORE_URL = 'http://192.168.1.6:8228'
+            ANCHORE_USERNAME = 'admin'
+            ANCHORE_PASSWORD = 'foobar'
         }
 
         parameters {
@@ -31,7 +34,7 @@ def call() {
                         sh 'mvn clean install'
                         script {
                             def image = docker.build("${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}")
-                            docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
+                            docker.withRegistry('', 'dockerhubpwd') {
                                 image.push()
                             }
                         }
@@ -88,11 +91,10 @@ def call() {
             stage('Scan Image with Anchore') {
                 steps {
                     script {
-                        withCredentials([usernamePassword(credentialsId: 'anchor_id', passwordVariable: 'ANCHORE_PASSWORD', usernameVariable: 'ANCHORE_USERNAME')]) {
-                            sh """
-                                curl -u ${ANCHORE_USERNAME}:${ANCHORE_PASSWORD} -X POST "${ANCHORE_URL}/v1/images?tag=${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
-                            """
-                        }
+                        anchoreImageScanner image: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
+                                            engineCredentialsId: 'anchor_id',
+                                            bailOnFail: false
+                            
                     }
                 }
             }
@@ -112,16 +114,21 @@ def call() {
         post {
             always {
                 script {
+                    def slackBaseUrl = 'https://slack.com/api/'
+                    def slackChannel = '#builds'
                     def slackColor = currentBuild.currentResult == 'SUCCESS' ? 'good' : 'danger'
                     def slackMessage = "Build ${currentBuild.fullDisplayName} finished with status: ${currentBuild.currentResult}"
 
-                    echo "Sending Slack notification with message: ${slackMessage}"
+                    echo "Sending Slack notification to ${slackChannel} with message: ${slackMessage}"
 
                     slackSend(
-                        baseUrl: 'https://slack.com/api/',
+                        baseUrl: 'https://yourteam.slack.com/api/',
+                        teamDomain: 'StarAppleInfotech',
                         channel: '#builds',
                         color: slackColor,
+                        botUser: true,
                         tokenCredentialId: SLACK_CREDENTIALS,
+                        notifyCommitters: false,
                         message: "Build Java Application #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
                     )
                 }
