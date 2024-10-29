@@ -1,4 +1,4 @@
-You said:
+
 def call() {
     pipeline {
         agent any
