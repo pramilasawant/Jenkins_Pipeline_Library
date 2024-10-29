@@ -178,7 +178,7 @@ def call() {
             stage('Scan Image with Anchore') {
                 steps {
                     script {
-                    withCredentials([usernamePassword(credentialsId: 'anchor_id', passwordVariable: 'ANCHORE_PASSWORD', usernameVariable: 'ANCHORE_USERNAME')]) {
+                    withCredentials([usernamePassword(credentialsId: 'anchor_id', passwordVariable: 'foobar', usernameVariable: 'admin')]) {
                             sh """
                                 anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image add ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}
                                 anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image wait ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}
