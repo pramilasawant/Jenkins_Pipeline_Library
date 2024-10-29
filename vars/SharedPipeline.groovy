@@ -90,19 +90,9 @@ def call() {
                     script {
                         withCredentials([usernamePassword(credentialsId: 'anchor_id', passwordVariable: 'ANCHORE_PASSWORD', usernameVariable: 'ANCHORE_USERNAME')]) {
                             sh """
-                                anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image add ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}
-                                anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image wait ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}
-                                anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image vuln ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number} all
+                                curl -u ${ANCHORE_USERNAME}:${ANCHORE_PASSWORD} -X POST "${ANCHORE_URL}/v1/images?tag=${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
                             """
                         }
-                    }
-                }
-            }
-
-            stage('Display Scan Results') {
-                steps {
-                    script {
-                        sh "anchore-cli image get ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
                     }
                 }
             }
