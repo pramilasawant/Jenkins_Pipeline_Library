@@ -196,7 +196,7 @@ def call() {
                 }
             }
         }
-
+        }
             stage('Deploy Java Application to Kubernetes') {
                 steps {
                     script {
