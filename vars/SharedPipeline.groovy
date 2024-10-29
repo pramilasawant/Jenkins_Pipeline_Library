@@ -90,9 +90,11 @@ def call() {
             stage('Scan Image with Anchore') {
                 steps {
                     script {
-                        anchoreImageScanner image: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
+                        anchoreImageScanner(
+                        image: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
                                             engineCredentialsId: 'anchor_id',
                                             bailOnFail: false
+                            )
                     }
                 }
             }
