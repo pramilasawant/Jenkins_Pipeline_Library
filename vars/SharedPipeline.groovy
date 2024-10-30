@@ -6,8 +6,9 @@ def call() {
             DOCKERHUB_CREDENTIALS = credentials('dockerhubpwd')
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
             SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken') // SonarQube token credentials
-            SONARQUBE_SERVER = 'http://localhost:9000'
-            ANCHORE_IMAGE_NAME = "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
+            SONARQUBE_SERVER = 'http://localhost:9000' // Replace with your SonarQube server URL
+            ANCHORE_ENGINE_URL = 'http://192.168.1.6:8228' // Anchore Engine URL
+            ANCHORE_CREDENTIALS = credentials('anchore_credentials') // Anchore credentials ID
         }
 
         parameters {
@@ -84,9 +85,13 @@ def call() {
                 }
             }
 
-            stage('Scan Image with Anchore') {
+            stage('Anchore Image Scan') {
                 steps {
-                    anchore name: ANCHORE_IMAGE_NAME, engineRetries: 3, policyEval: true
+                    anchore name: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
+                            engineCredentialsId: 'anchore_credentials', 
+                            engineUrl: ANCHORE_ENGINE_URL, 
+                            failOnPolicyEval: true, 
+                            failOnCveSeverity: 'Critical'
                 }
             }
 
@@ -105,19 +110,46 @@ def call() {
         post {
             always {
                 script {
+                    def slackChannel = '#builds'
                     def slackColor = currentBuild.currentResult == 'SUCCESS' ? 'good' : 'danger'
+                    def slackMessage = "Build ${currentBuild.fullDisplayName} finished with status: ${currentBuild.currentResult}"
+
                     slackSend(
-                        channel: '#builds',
+                        baseUrl: 'https://yourteam.slack.com/api/',
+                        teamDomain: 'StarAppleInfotech',
+                        channel: slackChannel,
                         color: slackColor,
-                        message: "Build ${currentBuild.fullDisplayName} finished with status: ${currentBuild.currentResult}",
-                        tokenCredentialId: SLACK_CREDENTIALS
+                        botUser: true,
+                        tokenCredentialId: SLACK_CREDENTIALS,
+                        notifyCommitters: false,
+                        message: "Build Java Application #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
                     )
                 }
-                
+
                 emailext(
                     to: 'pramila.narawadesv@gmail.com',
                     subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
                     body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+
+            failure {
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Failed",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed.</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+
+            success {
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Succeeded",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} succeeded.</p>
                             <p>Check console output at ${env.BUILD_URL}</p>""",
                     mimeType: 'text/html'
                 )
