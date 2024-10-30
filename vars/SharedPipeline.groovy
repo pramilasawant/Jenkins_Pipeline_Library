@@ -9,6 +9,9 @@ def call() {
             SONARQUBE_SERVER = 'http://localhost:9000'
             ANCHORE_ENGINE_CREDENTIALS = credentials('anchor_id')
             ANCHORE_URL = 'http://192.168.1.6:8228'
+            ANCHORE_PASSWORD = 'foobar'
+            ANCHORE_USERNAME = 'admin'
+            
         }
 
         parameters {
