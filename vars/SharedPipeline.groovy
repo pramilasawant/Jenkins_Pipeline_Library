@@ -9,9 +9,6 @@ def call() {
             SONARQUBE_SERVER = 'http://localhost:9000'
             ANCHORE_ENGINE_CREDENTIALS = credentials('anchor_id')
             ANCHORE_URL = 'http://192.168.1.6:8228'
-            ANCHORE_PASSWORD = 'foobar'
-            ANCHORE_USERNAME = 'admin'
-            
         }
 
         parameters {
@@ -46,12 +43,12 @@ def call() {
                 steps {
                     dir('testhello') {
                         withSonarQubeEnv('SonarQube') {
-                            sh '''
+                            sh """
                                 mvn sonar:sonar \
                                     -Dsonar.projectKey=testhello \
                                     -Dsonar.host.url=${SONARQUBE_SERVER} \
-                                    -Dsonar.login=${SONARQUBE_CREDENTIALS}
-                            '''
+                                    -Dsonar.login=${SONARQUBE_CREDENTIALS_PSW}
+                            """
                         }
                     }
                 }
@@ -95,8 +92,20 @@ def call() {
                             sh """
                                 anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image add ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}
                                 anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image wait ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}
-                                anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image vuln ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number} all
                             """
+
+                            def scanResult = sh(
+                                script: """
+                                    anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image vuln ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number} all || true
+                                """,
+                                returnStdout: true
+                            ).trim()
+
+                            echo "Anchore Scan Results for ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}:\n${scanResult}"
+
+                            if (scanResult.contains("High")) {
+                                error "Anchore scan found high severity vulnerabilities. Failing the build."
+                            }
                         }
                     }
                 }
