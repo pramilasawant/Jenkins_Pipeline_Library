@@ -7,9 +7,8 @@ def call() {
             SLACK_CREDENTIALS = credentials('b3ee302b-e782-4d8e-ba83-7fa591d43205')
             SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken')
             SONARQUBE_SERVER = 'http://localhost:9000'
+            ANCHORE_ENGINE_CREDENTIALS = credentials('anchor_id')
             ANCHORE_URL = 'http://192.168.1.6:8228'
-            ANCHORE_USERNAME = 'admin'
-            ANCHORE_PASSWORD = 'foobar'
         }
 
         parameters {
@@ -32,7 +31,7 @@ def call() {
                         sh 'mvn clean install'
                         script {
                             def image = docker.build("${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}")
-                            docker.withRegistry('', 'dockerhubpwd') {
+                            docker.withRegistry('', DOCKERHUB_CREDENTIALS) {
                                 image.push()
                             }
                         }
@@ -86,12 +85,16 @@ def call() {
                 }
             }
 
-            stage('Scan Image with Anchore') {
+            stage('Anchore Scan') {
                 steps {
                     script {
-                        anchoreImageScanner image: "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}", 
-                                            engineCredentialsId: 'anchor_id',
-                                            bailOnFail: false
+                        withCredentials([usernamePassword(credentialsId: 'anchor_id', passwordVariable: 'ANCHORE_PASSWORD', usernameVariable: 'ANCHORE_USERNAME')]) {
+                            sh """
+                                anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image add ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}
+                                anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image wait ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}
+                                anchore-cli --u $ANCHORE_USERNAME --p $ANCHORE_PASSWORD --url $ANCHORE_URL image vuln ${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number} all
+                            """
+                        }
                     }
                 }
             }
@@ -111,21 +114,16 @@ def call() {
         post {
             always {
                 script {
-                    def slackBaseUrl = 'https://slack.com/api/'
-                    def slackChannel = '#builds'
                     def slackColor = currentBuild.currentResult == 'SUCCESS' ? 'good' : 'danger'
                     def slackMessage = "Build ${currentBuild.fullDisplayName} finished with status: ${currentBuild.currentResult}"
 
-                    echo "Sending Slack notification to ${slackChannel} with message: ${slackMessage}"
+                    echo "Sending Slack notification with message: ${slackMessage}"
 
                     slackSend(
-                        baseUrl: 'https://yourteam.slack.com/api/',
-                        teamDomain: 'StarAppleInfotech',
+                        baseUrl: 'https://slack.com/api/',
                         channel: '#builds',
                         color: slackColor,
-                        botUser: true,
                         tokenCredentialId: SLACK_CREDENTIALS,
-                        notifyCommitters: false,
                         message: "Build Java Application #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
                     )
                 }
