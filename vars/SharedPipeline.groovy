@@ -95,7 +95,7 @@ def call() {
                         """
                         
                         // Wait for the image to be processed
-                        sleep(time: 30, unit: 'SECONDS')
+                        sleep(time: 40, unit: 'SECONDS')
 
                         // Get the image scan results
                         def results = sh(script: "curl -s -u '${ANCHORE_USERNAME}:${ANCHORE_PASSWORD}' ${ANCHORE_URL}/v1/images/${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}/report", returnStdout: true)
