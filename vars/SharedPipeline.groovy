@@ -8,8 +8,7 @@ def call() {
             SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken')
             SONARQUBE_SERVER = 'http://localhost:9000'
             ANCHORE_URL = 'http://192.168.1.6:8228'
-            ANCHORE_USERNAME = 'admin'
-            ANCHORE_PASSWORD = 'foobar'
+            ANCHORE_CREDENTIALS = credentials('anchor_id') // Using the Anchore credentials
         }
 
         parameters {
@@ -90,7 +89,20 @@ def call() {
                 steps {
                     script {
                         def imageTag = "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
-                        anchore name: imageTag, timeout: 600
+                        try {
+                            def scanResult = anchore(
+                                name: imageTag,
+                                checkForFailures: true,
+                                checkForDisallowed: true,
+                                bailOnFail: true,
+                                timeout: 600,
+                                engineCredentialsId: 'anchor_id' // Use the Anchore credentials
+                            )
+                            echo "Anchore scan completed successfully. Report: ${scanResult}"
+                        } catch (Exception e) {
+                            echo "Anchore scan failed: ${e.getMessage()}"
+                            error "Stopping pipeline due to Anchore scan failure."
+                        }
                     }
                 }
             }
