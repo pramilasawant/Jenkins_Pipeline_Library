@@ -94,7 +94,7 @@ def call() {
                         // Attempt scan with improved error handling
                         try {
                             anchore name: imageTag, 
-                                    engineCredentialsId: ANCHORE_CREDENTIALS.id, 
+                                    engineCredentialsId: anchor_id', 
                                     policyBundleId: '', 
                                     timeout: 600
                         } catch (Exception e) {
