@@ -89,19 +89,14 @@ def call() {
                 steps {
                     script {
                         def imageTag = "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
+                        echo "Scanning image with Anchore: ${imageTag}"
+                        
+                        // Attempt scan with improved error handling
                         try {
-                            // Adding debug information
-                            echo "Starting Anchore scan for image: ${imageTag} at URL: ${ANCHORE_URL}"
-                            
-                            def scanResult = anchore(
-                                name: imageTag,
-                                checkForFailures: true,
-                                checkForDisallowed: true,
-                                bailOnFail: true,
-                                timeout: 600,
-                                engineCredentialsId: 'anchor_id'
-                            )
-                            echo "Anchore scan completed successfully. Report: ${scanResult}"
+                            anchore name: imageTag, 
+                                    engineCredentialsId: ANCHORE_CREDENTIALS.id, 
+                                    policyBundleId: '', 
+                                    timeout: 600
                         } catch (Exception e) {
                             echo "Anchore scan failed: ${e.getMessage()}"
                             error "Stopping pipeline due to Anchore scan failure."
@@ -143,39 +138,6 @@ def call() {
                         message: "Build Java Application #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
                     )
                 }
-
-                emailext(
-                    to: 'pramila.narawadesv@gmail.com',
-                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
-                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}</p>
-                            <p>Check console output at ${env.BUILD_URL}</p>""",
-                    mimeType: 'text/html'
-                )
-            }
-
-            failure {
-                emailext(
-                    to: 'pramila.narawadesv@gmail.com',
-                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Failed",
-                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed.</p>
-                            <p>Check console output at ${env.BUILD_URL}</p>""",
-                    mimeType: 'text/html'
-                )
-            }
-
-            success {
-                emailext(
-                    to: 'pramila.narawadesv@gmail.com',
-                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Succeeded",
-                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} succeeded.</p>
-                            <p>Check console output at ${env.BUILD_URL}</p>""",
-                    mimeType: 'text/html'
-                )
-            }
-        }
-    }
-}
-
 
                 emailext(
                     to: 'pramila.narawadesv@gmail.com',
