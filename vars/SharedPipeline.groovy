@@ -8,7 +8,7 @@ def call() {
             SONARQUBE_CREDENTIALS = credentials('pipeline_Stoken')
             SONARQUBE_SERVER = 'http://localhost:9000'
             ANCHORE_URL = 'http://192.168.1.6:8228'
-            ANCHORE_CREDENTIALS = credentials('anchor_id') // Using the Anchore credentials
+            ANCHORE_CREDENTIALS = credentials('anchor_id')
         }
 
         parameters {
@@ -90,13 +90,16 @@ def call() {
                     script {
                         def imageTag = "${params.DOCKERHUB_USERNAME}/${params.JAVA_IMAGE_NAME}:${currentBuild.number}"
                         try {
+                            // Adding debug information
+                            echo "Starting Anchore scan for image: ${imageTag} at URL: ${ANCHORE_URL}"
+                            
                             def scanResult = anchore(
                                 name: imageTag,
                                 checkForFailures: true,
                                 checkForDisallowed: true,
                                 bailOnFail: true,
                                 timeout: 600,
-                                engineCredentialsId: 'anchor_id' // Use the Anchore credentials
+                                engineCredentialsId: 'anchor_id'
                             )
                             echo "Anchore scan completed successfully. Report: ${scanResult}"
                         } catch (Exception e) {
@@ -140,6 +143,39 @@ def call() {
                         message: "Build Java Application #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}"
                     )
                 }
+
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} ${currentBuild.currentResult}",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} finished with status: ${currentBuild.currentResult}</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+
+            failure {
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Failed",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} failed.</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+
+            success {
+                emailext(
+                    to: 'pramila.narawadesv@gmail.com',
+                    subject: "Jenkins Build ${env.JOB_NAME} #${env.BUILD_NUMBER} Succeeded",
+                    body: """<p>Build ${env.JOB_NAME} #${env.BUILD_NUMBER} succeeded.</p>
+                            <p>Check console output at ${env.BUILD_URL}</p>""",
+                    mimeType: 'text/html'
+                )
+            }
+        }
+    }
+}
+
 
                 emailext(
                     to: 'pramila.narawadesv@gmail.com',
